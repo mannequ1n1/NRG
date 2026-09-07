@@ -9,6 +9,7 @@ program computing_module
 	use chemical_properties_class
 	use thermophysical_properties_class
 	use solver_options_class
+    use problem_control_class, only: problem_controls, problem_controls_c
 	use computational_mesh_class
 	use mpi_communications_class
 	use data_manager_class
@@ -50,6 +51,7 @@ program computing_module
 	type(fds_solver)							:: problem_fds_solver
 
 	type(solver_options)						:: problem_solver_options
+    type(problem_controls)                       :: problem_controls_setup
 	
 	type(boundary_conditions)	,target			:: problem_boundaries
 	type(field_scalar_cons)		,target			:: p, T, rho, e_i, E_f, mix_mol_mass
@@ -182,6 +184,9 @@ program computing_module
 	problem_mpi_support		= mpi_communications_c(problem_domain)
 
 	problem_solver_options	= solver_options_c()
+    problem_controls_setup = problem_controls_c()
+    call problem_controls_setup%validate_solver_compatibility( &
+        problem_solver_options%get_solver_name())
 
 	! Run-level termination policy.  Missing run_control.inf means mode='none',
 	! which preserves the legacy data_io wall-time termination path.
@@ -189,7 +194,8 @@ program computing_module
 	problem_run_control = run_control_c()
 	call problem_run_control%start()
 	
-	problem_manager			= data_manager_c(problem_domain,problem_mpi_support,problem_chemistry,problem_thermophysics,problem_solver_options)
+	problem_manager			= data_manager_c(problem_domain,problem_mpi_support,problem_chemistry,problem_thermophysics, &
+        problem_solver_options,problem_controls_setup)
     
 	call problem_manager%create_boundary_conditions(problem_boundaries)
 	call problem_manager%create_computational_mesh(problem_mesh)
@@ -234,6 +240,7 @@ program computing_module
 		call problem_data_io			%write_log(log_unit)
 		call problem_boundaries			%write_log(log_unit)
 		call problem_solver_options		%write_log(log_unit)
+        call problem_controls_setup          %write_log(log_unit)
 		call problem_run_control		%write_log(log_unit)
 	end if
 	

@@ -43,6 +43,7 @@ module boundary_type_class
 		procedure	:: set_farfield_temperature
 		procedure	:: set_farfield_density
         procedure	:: set_farfield_energy
+        procedure   :: set_farfield_velocity
 		procedure	:: set_farfield_concentrations
 
 		! Logger		
@@ -229,7 +230,7 @@ contains
 			this%priority					= priority
 		end select
 	end subroutine
-	
+
 	subroutine write_log(this,log_unit)
 		class(boundary_type)	,intent(in)	:: this
 		integer					,intent(in)	:: log_unit
@@ -370,14 +371,19 @@ contains
 
 		this%farfield_energy = farfield_energy
 	end subroutine   
-    
-	pure subroutine	set_farfield_velocity(this,farfield_velocity)
-		class(boundary_type)	,intent(inout)		:: this
-		real(dp)				,intent(in)			:: farfield_velocity
-
-		this%farfield_velocity = farfield_velocity
-	end subroutine	
 	
+    pure subroutine set_farfield_velocity(this, farfield_velocity)
+        class(boundary_type)    , intent(inout)     :: this
+        real(dp)                , intent(in)        :: farfield_velocity
+
+        select case (trim(this%type_name))
+        case ('inlet', 'outlet', 'outlet2')
+            this%farfield_velocity = farfield_velocity
+        case default
+            error stop 'Boundary type: farfield velocity can be changed only for inlet/outlet boundaries'
+        end select
+    end subroutine set_farfield_velocity
+
 	pure subroutine	set_farfield_concentrations(this,farfield_concentrations)
 		class(boundary_type)		,intent(inout)		:: this
 		real(dp), dimension(:)	,intent(in)			:: farfield_concentrations

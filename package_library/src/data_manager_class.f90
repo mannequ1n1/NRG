@@ -12,6 +12,7 @@ module data_manager_class
 	use field_vector_class
 	use field_tensor_class
 	use solver_options_class
+    use problem_control_class, only: problem_controls
 
     use benchmarking
  
@@ -29,6 +30,7 @@ module data_manager_class
 		type(chemical_properties_pointer)		,public	:: chemistry
 		type(thermophysical_properties_pointer)	,public	:: thermophysics
 		type(solver_options)                    ,public	:: solver_options
+        type(problem_controls)                  ,public  :: problem_controls_config
         
 		type(field_scalar_cons_pointer)	,dimension(100)	:: scalar_field_cons_pointers
 		type(field_vector_cons_pointer)	,dimension(100)	:: vector_field_cons_pointers
@@ -80,15 +82,19 @@ module data_manager_class
 
 contains
 
-	type(data_manager)	function constructor(comp_domain,mpi_comms,chemistry,thermophysics,solver_opts)
+	type(data_manager)	function constructor(comp_domain,mpi_comms,chemistry,thermophysics,solver_opts,problem_controls_opts)
 		type(computational_domain)		,intent(in)				:: comp_domain
 		type(mpi_communications)		,intent(in)				:: mpi_comms
 		type(chemical_properties)		,intent(in)	,target		:: chemistry
 		type(thermophysical_properties)	,intent(in)	,target		:: thermophysics
         type(solver_options)            ,intent(in)             :: solver_opts
+        type(problem_controls)          ,intent(in), optional   :: problem_controls_opts
         
 		constructor%domain						= comp_domain
         constructor%solver_options              = solver_opts
+        if (present(problem_controls_opts)) then
+            constructor%problem_controls_config = problem_controls_opts
+        end if
 		constructor%mpi_communications			= mpi_comms
 		constructor%chemistry%chem_ptr			=> chemistry
 		constructor%thermophysics%thermo_ptr	=> thermophysics

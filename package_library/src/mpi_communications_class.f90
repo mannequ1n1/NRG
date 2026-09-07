@@ -42,6 +42,7 @@ module mpi_communications_class
 		procedure   :: exchange_mesh
 		procedure	:: exchange_flow_scalar_field
         procedure   :: exchange_flow_vector_field
+        procedure   :: global_sum_real
 	end type
 
 	interface	mpi_communications_c
@@ -239,6 +240,21 @@ contains
 #endif
 
     end function
+
+    subroutine global_sum_real(this, local_value, global_value)
+        class(mpi_communications), intent(in) :: this
+        real(dp), intent(in) :: local_value
+        real(dp), intent(out) :: global_value
+#ifdef mpi
+        integer :: error, communicator
+
+        communicator = this%domain%get_mpi_communicator()
+        call MPI_ALLREDUCE(local_value, global_value, 1, MPI_DOUBLE_PRECISION, &
+            MPI_SUM, communicator, error)
+#else
+        global_value = local_value
+#endif
+    end subroutine global_sum_real
 
     subroutine exchange_conservative_scalar_field(this, scal_ptr)
         class(mpi_communications)   ,target     ,intent(inout)  :: this

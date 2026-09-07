@@ -43,6 +43,7 @@ program package_interface
     use chemical_properties_class  ! Chemical kinetics and species data
     use thermophysical_properties_class ! Thermodynamic and transport properties
     use solver_options_class       ! Numerical solver configuration
+    use problem_control_class      ! Problem-specific active controls
     use computational_mesh_class   ! Mesh generation and management
     use mpi_communications_class   ! Parallel communication routines
     use data_manager_class         ! Central data management
@@ -102,6 +103,8 @@ program package_interface
     
     ! Solver configuration
     type(solver_options)                     :: problem_solver_options ! Numerical method settings
+    type(flame_stabilization_control)        :: problem_flame_stabilization
+    type(problem_controls)                   :: problem_controls_setup
     
     ! Solution fields (with TARGET attribute)
     type(computational_mesh)         ,target :: problem_mesh          ! Computational grid
@@ -203,7 +206,7 @@ program package_interface
     ! task6: Spatial resolution (currently dx=1.25e-05 m)
     !================================================================
     
-    do task1 = 3, 3          ! Problem setups: Counter-flow flame (1), Counter-flow (precomputed flamelet) (2), Flame out from the wall (3)
+    do task1 = 1, 1          ! Problem setups: Counter-flow flame (1), Counter-flow (precomputed flamelet) (2), Flame out from the wall (3)
     do task2 = 1, 1          ! Coordinate systems: Cartesian (1), Cylindrical (2), Spherical (3). 
     do task3 = 1, 1          ! Numerical solver: FDS solver (1), CPM solver (2), CABARET solver (3). 
     do task4 = 1, 1          ! Chemical kinetics scheme: KEROMNES mechanism (1)
@@ -389,13 +392,29 @@ program package_interface
             CFL_coefficient             = 0.25_dp, &     ! CFL safety factor
             initial_time_step           = 1e-06_dp)      ! Initial Δt [s]
         
+        ! Active flame stabilization belongs to the physical problem setup.
+        ! Near-wall propagation has no inlet and therefore requests no active
+        ! inlet stabilization.
+        select case (setup)
+        case ('counter_flow', 'counter_flow_precInc')
+            problem_flame_stabilization = flame_stabilization_control_c( &
+                mode = 'laminar_burning_velocity')
+        case default
+            problem_flame_stabilization = flame_stabilization_control_c( &
+                mode = 'none')
+        end select
+
+        problem_controls_setup = problem_controls_c( &
+            flame_stabilization = problem_flame_stabilization)
+
         !================================================================
         ! MPI AND DATA MANAGEMENT SETUP
         !================================================================
         problem_mpi_support   = mpi_communications_c(problem_domain)
         problem_data_manager  = data_manager_c(problem_domain, problem_mpi_support, &
                                                problem_chemistry, problem_thermophysics, &
-                                               problem_solver_options)
+                                               problem_solver_options, problem_controls_setup)
+        call problem_controls_setup%write_log(log_unit)
         
         ! Create boundary conditions (2 types for inlet/outlet or wall/outlet)
         call problem_data_manager%create_boundary_conditions( &

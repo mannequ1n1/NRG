@@ -35,6 +35,8 @@ module cabaret_solver_class
 	use fourier_heat_transfer_solver_class
 	use thermal_radiation_solver_class
 	use chemical_kinetics_solver_class
+	use energy_ignition_solver_class
+	use turbulence_forcing_solver_class
 
 	use dispersed_phase_solver_class, only: dispersed_phase_solver, &
 		dispersed_phase_solver_c
@@ -106,6 +108,8 @@ module cabaret_solver_class
 	type cabaret_solver
 		logical :: diffusion_flag, viscosity_flag, heat_trans_flag, radiation_flag
 		logical :: reactive_flag, CFL_condition_flag
+		logical :: energy_ignition_flag = .false.
+		logical :: turbulence_forcing_flag = .false.
 		real(dp) :: courant_fraction
 		real(dp) :: time, time_step
 		real(dp)                    :: rho_0
@@ -117,6 +121,8 @@ module cabaret_solver_class
 		type(heat_transfer_solver)			:: heat_trans_solver
 		type(thermal_radiation_solver)	:: radiation_solver
 		type(viscosity_solver)				:: viscosity_solver	
+		type(energy_ignition_solver) :: ignition_solver
+		type(turbulence_forcing_solver) :: turbulence_solver
 		type(table_approximated_real_gas)	:: state_eq
 
 		type(dispersed_phase_solver), dimension(:), allocatable :: particles_solver
@@ -132,8 +138,10 @@ module cabaret_solver_class
 		type(field_scalar_flow_pointer)	:: rho_f_new, p_f_new, e_i_f_new, v_s_f_new, E_f_f_new
 		
 		type(field_scalar_cons_pointer)	:: E_f_prod_chem, E_f_prod_heat, E_f_prod_rad, E_f_prod_diff, E_f_prod_visc
+		type(field_scalar_cons_pointer) :: E_f_prod_ignition
 
 		type(field_vector_cons_pointer)	:: v, Y	, v_prod_visc
+		type(field_vector_cons_pointer) :: v_prod_turbulence
 		type(field_vector_flow_pointer)	:: v_f_new, Y_f_new
 		
 		type(field_vector_cons_pointer)	:: Y_prod_chem, Y_prod_diff
@@ -405,6 +413,18 @@ contains
 			call manager%get_cons_field_pointer_by_name(scal_c_ptr,vect_c_ptr,tens_c_ptr,'velocity_production_viscosity')
 			constructor%v_prod_visc%v_ptr			=> vect_c_ptr%v_ptr
         end if			
+
+        constructor%ignition_solver = energy_ignition_solver_c(manager)
+        constructor%energy_ignition_flag = constructor%ignition_solver%is_enabled()
+        call manager%get_cons_field_pointer_by_name( &
+            scal_c_ptr, vect_c_ptr, tens_c_ptr, 'energy_production_ignition')
+        constructor%E_f_prod_ignition%s_ptr => scal_c_ptr%s_ptr
+
+        constructor%turbulence_solver = turbulence_forcing_solver_c(manager)
+        constructor%turbulence_forcing_flag = constructor%turbulence_solver%is_enabled()
+        call manager%get_cons_field_pointer_by_name( &
+            scal_c_ptr, vect_c_ptr, tens_c_ptr, 'velocity_production_turbulence')
+        constructor%v_prod_turbulence%v_ptr => vect_c_ptr%v_ptr
 		
         
 		constructor%state_eq	=	table_approximated_real_gas_c(manager)        
@@ -1024,6 +1044,12 @@ contains
 		! Evaluate selected physical source solvers once per full CABARET time step.
 		! Existing production fields are interpreted as effective conservative source
 		! rates, or as averaged rates if the solver internally integrates over dt.
+        if (this%energy_ignition_flag) then
+            call this%ignition_solver%solve(this%time, this%time_step)
+        end if
+        if (this%turbulence_forcing_flag) then
+            call this%turbulence_solver%solve(this%time, this%time_step)
+        end if
 		if (this%heat_trans_flag) then
 			call cabaret_heattransfer_timer%tic()
 			call this%heat_trans_solver%solve_heat_transfer(this%time_step)
@@ -1101,6 +1127,22 @@ contains
 						rhoY_src(spec,i,j,k) = rhoY_src(spec,i,j,k) + Y_prod_diff%pr(spec)%cells(i,j,k)
 					end do
 				end if
+
+                if (this%energy_ignition_flag) then
+                    rhoE_src(i,j,k) = rhoE_src(i,j,k) + &
+                        this%E_f_prod_ignition%s_ptr%cells(i,j,k)
+                end if
+
+                if (this%turbulence_forcing_flag) then
+                    do dim = 1, dimensions
+                        mom_src(dim,i,j,k) = mom_src(dim,i,j,k) + &
+                            this%rho_old(i,j,k) * &
+                            this%v_prod_turbulence%v_ptr%pr(dim)%cells(i,j,k)
+                        rhoE_src(i,j,k) = rhoE_src(i,j,k) + &
+                            this%rho_old(i,j,k) * this%v_old(dim,i,j,k) * &
+                            this%v_prod_turbulence%v_ptr%pr(dim)%cells(i,j,k)
+                    end do
+                end if
 
 				if (this%viscosity_flag) then
 					rhoE_src(i,j,k) = rhoE_src(i,j,k) + E_f_prod_visc%cells(i,j,k)

@@ -1,3 +1,11 @@
+# Problem-specific active-control subsolvers.  Keep the physical source layout
+# and the Visual Studio source group in one list.
+set(problem_controls_src
+	${SRC_COMPUTE}/src/current_build/problem_controls/energy_ignition_solver.f90
+	${SRC_COMPUTE}/src/current_build/problem_controls/turbulence_forcing_solver.f90
+	${SRC_COMPUTE}/src/current_build/problem_controls/flame_stabilization_solver.f90
+)
+
 # Add the source files
 set(computing_module_src 
 
@@ -31,6 +39,7 @@ set(computing_module_src
 	${SRC_COMPUTE}/src/third_party/slatec/xersve.f90
 	${SRC_COMPUTE}/src/third_party/slatec/xgetua.f90
 
+	${problem_controls_src}
 	${SRC_COMPUTE}/src/current_build/cabaret_solver.f90
 	${SRC_COMPUTE}/src/current_build/cabaret_low_mach_solver.f90
 	${SRC_COMPUTE}/src/current_build/chemical_kinetics_solver.f90
@@ -51,6 +60,9 @@ set(computing_module_src
 
 # Define the executable in terms of the source files
 add_executable(${COMPUTE} ${computing_module_src})
+
+# Group Problem Controls into a dedicated folder/filter in Visual Studio.
+source_group("problem_controls" FILES ${problem_controls_src})
 
 # Group slatec files into a 'slatec' folder in Visual Studio
 source_group("slatec" FILES 
