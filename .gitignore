@@ -1,1 +1,48 @@
-(package_interface/src/tests/classic_tests/1D_laminar_velocity_axisymmetric.f90)
+```
+# Compiled and build artifacts
+*.o
+*.obj
+*.mod
+*.smod
+*.exe
+*.out
+
+# Dependencies
+build/
+dist/
+lib/
+bin/
+
+# Logs and temp files
+*.log
+*.tmp
+*.swp
+
+# Editors
+.vscode/
+.idea/
+
+# Environment
+.env
+.env.local
+*.env.*
+
+# Coverage and testing
+.coverage
+coverage/
+htmlcov/
+
+# OS specific
+.DS_Store
+Thumbs.db
+
+# Archives
+*.zip
+*.gz
+*.tar
+*.tgz
+*.bz2
+*.xz
+*.7z
+*.rar
+```
