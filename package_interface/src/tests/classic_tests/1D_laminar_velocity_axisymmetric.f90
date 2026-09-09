@@ -1,12 +1,12 @@
 !================================================================================
-! 1D LAMINAR VELOCITY SIMULATION INTERFACE - AXISYMMETRIC (CYLINDRICAL) SETUP
+! 2D AXISYMMETRIC LAMINAR VELOCITY SIMULATION INTERFACE
 !================================================================================
 !
-! PROGRAM: package_interface
+! PROGRAM: package_interface_2d_axisymmetric
 !
 ! DESCRIPTION:
-!   This program serves as the main interface for 1D laminar burning velocity
-!   simulations in AXISYMMETRIC (CYLINDRICAL) coordinate system. It sets up 
+!   This program serves as the main interface for 2D axisymmetric laminar 
+!   burning velocity simulations in CYLINDRICAL coordinate system. It sets up 
 !   and executes parametric studies for different:
 !   - Physical setups (counter-flow, near-wall)
 !   - Solver types (FDS, CPM, CABARET)
@@ -21,25 +21,26 @@
 !   - Comprehensive post-processing setup
 !   - Support for flamelet initialization from precomputed tables
 !   - Cross-platform Windows/Linux case-directory handling
-!   - AXISYMMETRIC formulation with radial coordinate r
+!   - 2D AXISYMMETRIC formulation with radial (r) and axial (z) coordinates
 !
 ! PHYSICAL SYSTEM:
-!   Simulates 1D reactive flow with hydrogen-air mixtures
+!   Simulates 2D axisymmetric reactive flow with hydrogen-air mixtures
 !   Primary species: H2, O2, N2, H2O
 !   Temperature range: 300K - 2500K
 !   Pressure: Atmospheric (101325 Pa)
-!   Coordinate system: CYLINDRICAL (r, phi, z) with axisymmetry
+!   Coordinate system: CYLINDRICAL (r, phi, z) with axisymmetry (d/dphi = 0)
 !
 ! COORDINATE SYSTEM:
 !   x -> r (radial direction)
-!   y -> phi (azimuthal, unused in 1D)
-!   z -> z (axial, unused in 1D)
+!   y -> phi (azimuthal, axisymmetric so no variation)
+!   z -> z (axial direction)
 !   Cell volume includes 2*pi*r factor automatically
+!   PHYSICALLY CORRECT 2D FORMULATION: variations allowed in both r and z
 !
 !================================================================================
 !================================================================================
 
-program package_interface_axisymmetric
+program package_interface_2d_axisymmetric
 
     !==========================================
     ! MODULE IMPORTS
@@ -225,7 +226,7 @@ program package_interface_axisymmetric
                              !                      dx=6.25e-06 (6)
         
         ! Initialize working directory structure
-        work_dir = '1D_LBV_test_axisymmetric'  ! Main results directory for axisymmetric case
+        work_dir = '2D_LBV_test_axisymmetric'  ! Main results directory for 2D axisymmetric case
         
         ! Create directory tree based on parameter choices
         call ensure_directory(work_dir)
@@ -363,11 +364,11 @@ program package_interface_axisymmetric
         !================================================================
         
         problem_domain = computational_domain_c(  &
-            dimensions         = 1,                                     &
-            cells_number       = (/int(domain_length/delta_x),1,1/),    &
+            dimensions         = 2,                                     &
+            cells_number       = (/int(domain_length/delta_x),1,int(0.01_dp/delta_x)/),    &
             coordinate_system  = coordinate_system,                     &
             lengths            = reshape((/0.0_dp,0.000_dp,0.0_dp,      &
-                                          domain_length,0.0025_dp,0.0025_dp/),(/3,2/)), &
+                                          domain_length,0.01_dp,0.01_dp/),(/3,2/)), &
             axis_names         = (/'r','phi','z'/) )
         
         !================================================================
@@ -445,14 +446,14 @@ program package_interface_axisymmetric
         cell_size = problem_mesh%get_cell_edges_length()
         utter_loop = problem_domain%get_global_utter_cells_bounds()
         
-        ! Define monitoring regions
+        ! Define monitoring regions for 2D axisymmetric case
         transducer_offset = 0.005 / cell_size(1)  ! 5mm offset in cell units
         
         observation_slice(:,1) = (/1, 1, 1/)
-        observation_slice(:,2) = (/int(domain_length/delta_x), 1, 1/)
+        observation_slice(:,2) = (/int(domain_length/delta_x), 1, int(0.01_dp/delta_x)/)
         
         summation_region(:,1) = (/-transducer_offset, 1, 1/)
-        summation_region(:,2) = (/transducer_offset, 1, 1/)
+        summation_region(:,2) = (/transducer_offset, 1, int(0.01_dp/delta_x)/)
         
         !================================================================
         ! POST-PROCESSING SETUP
@@ -519,7 +520,7 @@ program package_interface_axisymmetric
             save_time_units   = 'milliseconds',  &   ! Time units for saving
             save_format       = 'tecplot',       &   ! Default output format
             data_save_folder  = 'data_save',     &   ! Output directory
-            dataset_name      = '1D_LBV_Keromnes_axisymmetric', &
+            dataset_name      = '2D_LBV_Keromnes_axisymmetric', &
             debug_flag        = .false.)              ! Debug mode off
         
         !================================================================
@@ -921,7 +922,7 @@ contains
         call run_filesystem_command(command)
     end subroutine copy_directory_tree
 
-end program package_interface_axisymmetric
+end program package_interface_2d_axisymmetric
 !================================================================================
 ! END OF PROGRAM
 !================================================================================
