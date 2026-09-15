@@ -251,8 +251,8 @@ program package_interface
         
         ! Set initial species concentrations for air
         ! Species order from ACETYLENE_Varatharajan.txt: C2H2, O2, N2, O, H, OH, H2O, CO, CO2, CH2O, CH2CO, HCCO, HCO, HO2, H2, CH3, AR
-        do i = 1, problem_chemistry%number_of_species
-            select case(trim(problem_chemistry%species(i)))
+        do i = 1, problem_chemistry%species_number
+            select case(trim(problem_chemistry%species_names(i)))
                 case('N2')
                     Y%pr(i)%cells(:,:,:) = 0.79_dp
                 case('O2')
