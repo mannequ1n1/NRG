@@ -90,6 +90,7 @@ program package_interface
     type(thermophysical_properties)  ,target :: problem_thermophysics
 
     type(solver_options)                     :: problem_solver_options
+    type(flame_stabilization_control)        :: problem_flame_stabilization
     type(problem_controls)                   :: problem_controls_setup
     
     type(computational_mesh)         ,target :: problem_mesh
@@ -185,12 +186,18 @@ program package_interface
             CFL_coefficient             = 0.25_dp, &
             initial_time_step           = 1e-08_dp)
         
-        problem_controls_setup = problem_controls_c()
+        problem_flame_stabilization = flame_stabilization_control_c( &
+            mode = 'none')
+        
+        problem_controls_setup = problem_controls_c( &
+            flame_stabilization = problem_flame_stabilization)
 
         problem_mpi_support   = mpi_communications_c(problem_domain)
         problem_data_manager  = data_manager_c(problem_domain, problem_mpi_support, &
                                                problem_chemistry, problem_thermophysics, &
                                                problem_solver_options, problem_controls_setup)
+        
+        call problem_controls_setup%write_log(log_unit)
         
         call problem_data_manager%create_boundary_conditions( &
             problem_boundaries, number_of_boundary_types = 3, default_boundary = 1)
@@ -202,7 +209,7 @@ program package_interface
         call problem_data_manager%create_scalar_field(rho, 'density',     'rho')
         
         call problem_data_manager%create_vector_field(v, 'velocity', 'v', 'spatial')
-        call problem_data_manager%create_vector_field(Y, 'specie_molar_concentration', 'Y', 'chemical')
+        call problem_data_manager%create_vector_field(Y, 'specie_mass_fraction', 'Y', 'chemical')
         
         cell_size = problem_mesh%get_cell_edges_length()
         utter_loop = problem_domain%get_global_utter_cells_bounds()
@@ -228,6 +235,7 @@ program package_interface
             save_time_units   = 'milliseconds',  &
             save_format       = 'tecplot',       &
             data_save_folder  = 'data_save',     &
+            dataset_name      = 'DGun_fill_acetylene_axisymmetric', &
             debug_flag        = .false.)
         
         problem_data_io = data_io_c( &
