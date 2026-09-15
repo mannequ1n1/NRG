@@ -1,1 +1,1 @@
-(package_interface/src/tests/classic_tests/DGun_fill_stratification_2D.f90)
+Nothing should be ignored based on the provided file changes. The modified file 'package_interface/src/tests/classic_tests/DGun_fill_stratification_2D.f90' is a source code file (.f90) which should not be added to .gitignore. Since there are no build artifacts, dependencies, temporary files, or other ignorable items in the changes, the .gitignore remains empty.

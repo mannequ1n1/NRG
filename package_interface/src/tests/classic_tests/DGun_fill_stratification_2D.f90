@@ -243,8 +243,10 @@ program package_interface
         p%cells(:,:,:)   = ambient_pressure
         T%cells(:,:,:)   = ambient_temperature
         
-        ! Initialize velocity field to zero
-        v%cells(:,:,:,:) = 0.0_dp
+        ! Initialize velocity field to zero (all spatial components)
+        do i = 1, v%get_projections_number()
+            v%pr(i)%cells(:,:,:) = 0.0_dp
+        end do
         
         ! Initialize species concentrations: air composition (N2=0.79, O2=0.21)
         call problem_thermophysics%change_field_units_mole_to_dimless(Y)
