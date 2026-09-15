@@ -3,31 +3,28 @@
 *.o
 *.obj
 *.mod
+*.exe
+*.dll
 *.so
 *.a
-*.dylib
-*.dll
+*.out
 
 # Dependencies
-node_modules/
-.venv/
-venv/
-__pycache__/
-*.egg-info/
-dist/
+lib/
+bin/
 build/
+dist/
 target/
 
 # Logs and temp files
 *.log
 *.tmp
 *.swp
-*.swo
 
 # Environment
 .env
 .env.local
-.env.*
+*.env.*
 
 # Editors
 .vscode/
@@ -35,29 +32,18 @@ target/
 *.swp
 *.swo
 
-# OS generated files
+# Coverage and testing
+.coverage
+coverage/
+htmlcov/
+
+# OS specific
 .DS_Store
 Thumbs.db
 
-# Coverage reports
-coverage/
-htmlcov/
-.coverage
-
-# Python specific
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
-.Python
-*.so
-*.egg
-*.egg-info/
-dist/
-build/
-*.dist-info/
-
-# Fortran specific
-*.mod
-*.smod
+# Package management
+*.tar.gz
+*.zip
+*.gz
+*.bz2
 ```

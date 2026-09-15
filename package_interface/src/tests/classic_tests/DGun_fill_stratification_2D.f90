@@ -303,4 +303,102 @@ program package_interface
     end do
     end do
 
+contains
+
+    subroutine get_current_directory(path)
+        character(len=*), intent(out) :: path
+        character(kind=c_char), allocatable :: c_buffer(:)
+        type(c_ptr) :: ptr
+        integer :: n, idx
+        
+        n = len(path)
+        allocate(c_buffer(0:n))
+        
+#ifdef WIN
+        ptr = c_getcwd(c_buffer, int(n, c_int))
+#else
+        ptr = c_getcwd(c_buffer, int(n, c_size_t))
+#endif
+        
+        if (.not. c_associated(ptr)) then
+            write(*,'(A)') 'ERROR: cannot get current directory'
+            error stop 1
+        end if
+        
+        path = ''
+        idx = 0
+        do while (idx < n)
+            if (c_buffer(idx) == c_null_char) exit
+            path(idx+1:idx+1) = c_buffer(idx)
+            idx = idx + 1
+        end do
+        
+        deallocate(c_buffer)
+    end subroutine get_current_directory
+
+
+    subroutine ensure_directory(path)
+        character(len=*), intent(in) :: path
+        character(len=2048) :: command
+        integer :: cmdstat, exitstat
+        character(len=512) :: errmsg
+        
+#ifdef WIN
+        command = 'if not exist "'//trim(path)//'" mkdir "'//trim(path)//'"'
+#else
+        command = 'mkdir -p "'//trim(path)//'"'
+#endif
+        call execute_command_line(trim(command), wait=.true., &
+            cmdstat=cmdstat, exitstat=exitstat, cmdmsg=errmsg)
+        if (cmdstat /= 0 .or. exitstat /= 0) then
+            write(*,'(A,A)') 'ERROR: cannot create directory ', trim(path)
+            if (len_trim(errmsg) > 0) write(*,'(A)') trim(errmsg)
+            error stop 2
+        end if
+    end subroutine ensure_directory
+
+
+    subroutine copy_directory_tree(source, dest)
+        character(len=*), intent(in) :: source, dest
+        character(len=2048) :: command
+        integer :: cmdstat, exitstat
+        character(len=512) :: errmsg
+        
+#ifdef WIN
+        command = 'xcopy "'//trim(source)//'" "'//trim(dest)//'" /E /I /K /Y >NUL'
+#else
+        command = 'cp -r "'//trim(source)//'" "'//trim(dest)//'"'
+#endif
+        call execute_command_line(trim(command), wait=.true., &
+            cmdstat=cmdstat, exitstat=exitstat, cmdmsg=errmsg)
+        if (cmdstat /= 0 .or. exitstat /= 0) then
+            write(*,'(A,A,A)') 'ERROR: cannot copy directory from ', trim(source), ' to ', trim(dest)
+            if (len_trim(errmsg) > 0) write(*,'(A)') trim(errmsg)
+            error stop 3
+        end if
+    end subroutine copy_directory_tree
+
+
+    subroutine change_directory(path)
+        character(len=*), intent(in) :: path
+        character(kind=c_char), allocatable :: c_path(:)
+        integer(c_int) :: status
+        integer :: n, idx
+        
+        n = len_trim(path)
+        allocate(c_path(0:n))
+        do idx = 1, n
+            c_path(idx-1) = path(idx:idx)
+        end do
+        c_path(n) = c_null_char
+        
+        status = c_chdir(c_path)
+        
+        deallocate(c_path)
+        if (status /= 0_c_int) then
+            write(*,'(A,A)') 'ERROR: cannot change directory to ', trim(path)
+            error stop 4
+        end if
+    end subroutine change_directory
+
 end program
