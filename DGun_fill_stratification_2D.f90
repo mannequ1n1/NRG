@@ -92,10 +92,10 @@ program package_interface
        
 		problem_domain			= computational_domain_c(	dimensions 			=	2				,	&
 															cells_number 		=	(/nint((domain_length)/delta_x),nint((domain_height)/delta_x),1/),			&
-															coordinate_system	=	'cartesian',   &													
+															coordinate_system	=	'cylindrical',   &													
 															lengths				=	reshape((/	0.0_dp,0.0_dp,0.0_dp,					&
-																								domain_length, domain_height,0.005_dp/),(/3,2/)),	&
-															axis_names			=	(/'x','y','z'/))
+																								domain_length, domain_height,0.0_dp/),(/3,2/)),	&
+															axis_names			=	(/'R','Z','Theta'/))
 	
 		problem_chemistry		= chemical_properties_c(chemical_mechanism_file_name	= 'ACETYLENE_Varatharajan.txt'	,	&	
 														default_enhanced_efficiencies	= 1.0_dp			,	&
@@ -176,13 +176,16 @@ program package_interface
 
 		!****************************** Setting boundary conditions ************************************
 			
+			call problem_boundaries%create_boundary_type (	type_name				= 'symmetry_plane'	,	&
+															priority				= 1)
+
 			call problem_boundaries%create_boundary_type (	type_name				= 'outlet'	,	&
 															farfield_pressure		= 101325.0_dp               ,	&
 															farfield_temperature	= 300.0_dp	                ,	&
 															farfield_velocity		= 0.0_dp   			        ,	&	
                 											farfield_species_names	= (/'N2'/)					,	&	
 															farfield_concentrations	= (/1.0_dp/)	,	&
-															priority				= 1)					
+															priority				= 2)
 
 			call problem_boundaries%create_boundary_type (	type_name				= 'inlet'			        ,	&
 															farfield_pressure		= 101325.0_dp               ,	&
@@ -200,15 +203,22 @@ program package_interface
 															priority				= 3)           
 
         
-            problem_boundaries%bc_markers(:,utter_loop(2,1),:)	= 3	
-			problem_boundaries%bc_markers(:,utter_loop(2,2),:)	= 3
-			problem_boundaries%bc_markers(utter_loop(1,1),:,:)	= 3	
-			problem_boundaries%bc_markers(utter_loop(1,2),:,:)	= 1	
+        
+            ! R=0: ось симметрии
+            problem_boundaries%bc_markers(utter_loop(1,1),:,:)= 1
+            ! R=R_max: стенка
+            problem_boundaries%bc_markers(utter_loop(1,2),:,:)= 3
+            ! Z=0: стенка (нижняя граница по Z) - будет перезаписано для впрыска
+            problem_boundaries%bc_markers(:,utter_loop(2,1),:)= 3
+            ! Z=L: outlet (верхняя граница по Z)
+            problem_boundaries%bc_markers(:,utter_loop(2,2),:)= 2
 
-            do j = utter_loop(2,1), utter_loop(2,2)
-                if (abs (j - 0.5*nint(domain_height/delta_x)) < nint(inflow_radius/delta_x)) then
-  			        problem_boundaries%bc_markers(utter_loop(1,1),j,:)	= 2 
-                end if  
+            ! Впрыск на нижней границе (Z=0) в центральной области по R
+            do i = utter_loop(1,1), utter_loop(1,2)
+                ! Проверяем, находится ли ячейка в пределах радиуса впрыска от оси
+                if ((i - utter_loop(1,1)) * cell_size(1) < inflow_radius) then
+                    problem_boundaries%bc_markers(i,utter_loop(2,1),:)= 2
+                end if
             end do
 
 		!***********************************************************************************************
