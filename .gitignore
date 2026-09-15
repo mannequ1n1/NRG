@@ -3,42 +3,31 @@
 *.o
 *.obj
 *.mod
-*.exe
-*.dll
 *.so
 *.a
-*.out
+*.dylib
+*.dll
 
 # Dependencies
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
-.Python
-env/
-venv/
+node_modules/
 .venv/
-pip-log.txt
-pipenv.lock
-requirements.txt.bak
-
-# Build directories
-build/
-dist/
+venv/
+__pycache__/
 *.egg-info/
+dist/
+build/
+target/
 
 # Logs and temp files
 *.log
 *.tmp
 *.swp
 *.swo
-*~
 
-# Environment variables
+# Environment
 .env
 .env.local
 .env.*
-!.env.example
 
 # Editors
 .vscode/
@@ -48,11 +37,27 @@ dist/
 
 # OS generated files
 .DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
 Thumbs.db
-Icon?
+
+# Coverage reports
+coverage/
+htmlcov/
+.coverage
+
+# Python specific
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+*.dist-info/
+
+# Fortran specific
+*.mod
+*.smod
 ```
