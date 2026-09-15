@@ -1,1 +1,58 @@
-(package_interface/src/tests/classic_tests/1D_laminar_velocity_axisymmetric.f90)
+```
+# Compiled and build artifacts
+*.o
+*.obj
+*.mod
+*.exe
+*.dll
+*.so
+*.a
+*.out
+
+# Dependencies
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+pip-log.txt
+pipenv.lock
+requirements.txt.bak
+
+# Build directories
+build/
+dist/
+*.egg-info/
+
+# Logs and temp files
+*.log
+*.tmp
+*.swp
+*.swo
+*~
+
+# Environment variables
+.env
+.env.local
+.env.*
+!.env.example
+
+# Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Icon?
+```
