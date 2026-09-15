@@ -248,11 +248,14 @@ program package_interface
             v%pr(i)%cells(:,:,:) = 0.0_dp
         end do
         
-        ! Initialize species concentrations: air composition (N2=0.79, O2=0.21)
-        call problem_thermophysics%change_field_units_mole_to_dimless(Y)
-        
         ! Set initial species concentrations for air
         ! Species order from ACETYLENE_Varatharajan.txt: C2H2, O2, N2, O, H, OH, H2O, CO, CO2, CH2O, CH2CO, HCCO, HCO, HO2, H2, CH3, AR
+        ! First initialize all species to zero
+        do i = 1, problem_chemistry%species_number
+            Y%pr(i)%cells(:,:,:) = 0.0_dp
+        end do
+        
+        ! Then set air composition (N2=0.79, O2=0.21)
         do i = 1, problem_chemistry%species_number
             select case(trim(problem_chemistry%species_names(i)))
                 case('N2')
@@ -260,9 +263,12 @@ program package_interface
                 case('O2')
                     Y%pr(i)%cells(:,:,:) = 0.21_dp
                 case default
-                    Y%pr(i)%cells(:,:,:) = 0.0_dp
+                    ! Already zero
             end select
         end do
+        
+        ! Convert mole fractions to dimensionless concentrations
+        call problem_thermophysics%change_field_units_mole_to_dimless(Y)
 
         call problem_boundaries%create_boundary_type( &
             type_name               = 'outlet',   &
