@@ -209,7 +209,7 @@ program package_interface
         call problem_data_manager%create_scalar_field(rho, 'density',     'rho')
         
         call problem_data_manager%create_vector_field(v, 'velocity', 'v', 'spatial')
-        call problem_data_manager%create_vector_field(Y, 'specie_molar_concentration', 'Y', 'chemical')
+        call problem_data_manager%create_vector_field(Y, 'specie_mass_fraction', 'Y', 'chemical')
         
         cell_size = problem_mesh%get_cell_edges_length()
         utter_loop = problem_domain%get_global_utter_cells_bounds()
